@@ -124,23 +124,23 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     float maxY = std::max(v[0][1], std::max(v[1][1], v[2][1]));
 
     // 对坐标取整，最小值向下取整，最大值向上取整
-    minX = (int)std::floor(minX);
-    maxX = (int)std::ceil(maxX);
-    minY = (int)std::floor(minY);
-    maxY = (int)std::ceil(maxY);
+    int min_X = std::floor(minX);
+    int max_X =std::ceil(maxX);
+    int min_Y = std::floor(minY);
+    int max_Y =std::ceil(maxY);
 
     // 定义一个像素中的采样点
     std::vector<Eigen::Vector2f> sample{ {0.25f, 0.25f}, { 0.75f, 0.25f },{ 0.25f, 0.75f }, { 0.75f, 0.75f } };
 
     // iterate through the pixel and find if the current pixel is inside the triangle
     // 遍历Bounding Box中的每一个像素
-    for (int x = minX; x < maxX; x++)
+    for (int x = min_X; x < max_X; x++)
     {
-        for (int y = minY; y < maxY; y++)
+        for (int y = min_Y; y < max_Y; y++)
         {
             //将每个像素定义为最大值
             float minDepth = FLT_MAX;
-
+            float depth = 0.0f;
             int count = 0;
             for (int i = 0; i < sample.size(); i++)
             {
@@ -149,24 +149,24 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                     // If so, use the following code to get the interpolated z value.
                     // 计算深度值
                     float alpha, beta, gamma;
-                    std::tie(alpha, beta, gamma) = computeBarycentric2D(x, y, t.v);
+                    std::tie(alpha, beta, gamma) = computeBarycentric2D(x + sample[i][0], y + sample[i][1], t.v);
 
-                    float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+                    float w_reciprocal = 1.0f / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                     float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                     z_interpolated *= w_reciprocal;
-                    minDepth = std::min(minDepth, z_interpolated);
+                    depth = -std::min(minDepth, z_interpolated);
                     count++;
                 }
             }
             // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
-            if (count != 0 && depth_buf[get_index(x, y)] > minDepth)
+            if (count != 0 && depth < depth_buf[get_index(x, y)])
             {
                 Vector3f color = t.getColor() * count / 4.0f;
-                Vector3f point{ (float)x, (float)y, minDepth };
+                Vector3f point{ (float)x, (float)y, depth };
+                // 替换深度
+                depth_buf[get_index(x, y)] = depth;
                 // 设置颜色
                 set_pixel(point, color);
-                // 替换深度
-                depth_buf[get_index(x, y)] = minDepth;
             }
         }
     }

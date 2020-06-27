@@ -280,7 +280,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
             // predefine the value of pixels 
             float minDepth = FLT_MAX;
 
-                // if a sample point of a pixel located in a triangle
+            // if a sample point of a pixel located in a triangle
             if (insideTriangle(x + 0.5f, y + 0.5f, t.v))
             {
                 // barycentric coordinates
@@ -294,7 +294,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
                 float Z = 1.0f / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                 float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                 zp *= Z;
-                zp = std::min(minDepth, zp);
+                zp = -std::min(minDepth, zp);
 
                 if (zp < depth_buf[get_index(x, y)])
                 {

@@ -62,8 +62,8 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
     float r = aspect_ratio * t;
     float l = -r;
     float b = -t;
-    float n = zNear;
-    float f = zFar;
+    float n = -zNear;
+    float f = -zFar;
 
     // build a matrix of orthographic projection
     Eigen::Matrix4f orthoA(4, 4);
@@ -89,7 +89,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
         0.0f, 0.0f, 1.0f, 0.0f;
 
     // compute the projection matrix
-    projection = ortho * pto;
+    projection *= ortho * pto;
 
     return projection;
 }
