@@ -42,22 +42,17 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 
 static bool insideTriangle(float x, float y, const Vector3f* _v)
 {   
-    // TODO : Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
-    Eigen::Vector2f p;
-    p << x, y;
-
-    Eigen::Vector2f AB = _v[1].head(2) - _v[0].head(2);
-    Eigen::Vector2f BC = _v[2].head(2) - _v[1].head(2);
-    Eigen::Vector2f CA = _v[0].head(2) - _v[2].head(2);
-
-    Eigen::Vector2f AP = p - _v[0].head(2);
-    Eigen::Vector2f BP = p - _v[1].head(2);
-    Eigen::Vector2f CP = p - _v[2].head(2);
-
-    // 判断每个z坐标是否统一
-    return AB[0] * AP[1] - AB[1] * AP[0] > 0
-        && BC[0] * BP[1] - BC[1] * BP[0] > 0
-        && CA[0] * CP[1] - CA[1] * CP[0] > 0;
+    Vector3f v[3];
+    for (int i = 0; i < 3; i++)
+        v[i] = { _v[i].x(),_v[i].y(), 1.0 };
+    Vector3f f0, f1, f2;
+    f0 = v[1].cross(v[0]);
+    f1 = v[2].cross(v[1]);
+    f2 = v[0].cross(v[2]);
+    Vector3f p(x, y, 1.);
+    if ((p.dot(f0) * f0.dot(v[2]) > 0) && (p.dot(f1) * f1.dot(v[0]) > 0) && (p.dot(f2) * f2.dot(v[1]) > 0))
+        return true;
+    return false;
 }
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector3f* v)
@@ -159,6 +154,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                     float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                     float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                     z_interpolated *= w_reciprocal;
+                    minDepth = std::min(minDepth, z_interpolated);
                     count++;
                 }
             }
