@@ -134,9 +134,9 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
 
     // iterate through the pixel and find if the current pixel is inside the triangle
     // 遍历Bounding Box中的每一个像素
-    for (int x = min_X; x < max_X; x++)
+    for (int x = min_X; x <= max_X; x++)
     {
-        for (int y = min_Y; y < max_Y; y++)
+        for (int y = min_Y; y <= max_Y; y++)
         {
             //将每个像素定义为最大值
             float minDepth = FLT_MAX;

@@ -125,7 +125,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     if (payload.texture)
     {
         // TODO: Get the texture value at the texture coordinates of the current fragment
-
+        return_color = payload.texture->getColor(payload.tex_coords.x(), payload.tex_coords.y());
     }
     Eigen::Vector3f texture_color;
     texture_color << return_color.x(), return_color.y(), return_color.z();
@@ -154,6 +154,29 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
 
+        // the light's direction
+        auto lightToPoint = light.position - point;
+        Eigen::Vector3f light_dir = lightToPoint.normalized();
+        // the eye's direction
+        Eigen::Vector3f view_dir = (eye_pos - point).normalized();
+        // the distance from the light source to a shading point
+        float r = lightToPoint.norm();
+
+        // compute half vector
+        auto lightView = light_dir + view_dir;
+        Eigen::Vector3f halfVector = lightView / lightView.norm();
+
+        // compute the attenuation of the light intensity
+        auto Irr = light.intensity / r / r;
+
+        // diffuse
+        Eigen::Vector3f diffuse = kd.cwiseProduct(Irr) * std::max(0.0f, normal.dot(light_dir));
+        // specular
+        Eigen::Vector3f specular = ks.cwiseProduct(Irr) * std::pow(std::max(0.0f, normal.dot(halfVector)), p);
+        // ambient
+        Eigen::Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
+
+        result_color += (diffuse + specular + ambient);
     }
 
     return result_color * 255.f;
@@ -255,7 +278,29 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
 
+        // the light's direction
+        auto lightToPoint = light.position - point;
+        Eigen::Vector3f light_dir = lightToPoint.normalized();
+        // the eye's direction
+        Eigen::Vector3f view_dir = (eye_pos - point).normalized();
+        // the distance from the light source to a shading point
+        float r = lightToPoint.norm();
 
+        // compute half vector
+        auto lightView = light_dir + view_dir;
+        Eigen::Vector3f halfVector = lightView / lightView.norm();
+
+        // compute the attenuation of the light intensity
+        auto Irr = light.intensity / r / r;
+
+        // diffuse
+        Eigen::Vector3f diffuse = kd.cwiseProduct(Irr) * std::max(0.0f, normal.dot(light_dir));
+        // specular
+        Eigen::Vector3f specular = ks.cwiseProduct(Irr) * std::pow(std::max(0.0f, normal.dot(halfVector)), p);
+        // ambient
+        Eigen::Vector3f ambient = ka.cwiseProduct(amb_light_intensity);
+
+        result_color += (diffuse + specular + ambient);
     }
 
     return result_color * 255.f;
@@ -335,7 +380,9 @@ int main(int argc, const char** argv)
     auto texture_path = "hmap.jpg";
     r.set_texture(Texture(obj_path + texture_path));
 
-    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = phong_fragment_shader;
+    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = texture_fragment_shader;
+    texture_path = "spot_texture.png";
+    r.set_texture(Texture(obj_path + texture_path));
 
     if (argc >= 2)
     {

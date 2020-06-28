@@ -273,9 +273,9 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
     int yMin = std::floor(y_min);
     int yMax = std::ceil(y_max); 
 
-    for (int x = xMin; x < xMax; x++)
+    for (int x = xMin; x <= xMax; x++)
     {
-        for (int y = yMin; y < yMax; y++)
+        for (int y = yMin; y <= yMax; y++)
         {
             // predefine the value of pixels 
             float minDepth = FLT_MAX;
