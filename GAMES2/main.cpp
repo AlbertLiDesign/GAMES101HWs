@@ -40,7 +40,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     // Then return it.
 
     float fovY = eye_fov / 180.0f * M_PI;
-    float t = tan(fovY / 2) * abs(zNear);
+    float t = tan(fovY / 2) * zNear;
     float r = aspect_ratio * t;
     float l = -r;
     float b = -t;
@@ -60,7 +60,6 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
         0.0f, 1.0f, 0.0f, -(t + b) / 2.0f,
         0.0f, 0.0f, 1.0f, -(n + f) / 2.0f,
         0.0f, 0.0f, 0.0f, 1.0f;
-    Eigen::Matrix4f ortho = orthoA * orthoB;
 
     // build a matrix from perspective to orthographic
     Matrix4f pto(4, 4);
@@ -71,7 +70,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
         0.0f, 0.0f, 1.0f, 0.0f;
 
     // compute the projection matrix
-    projection *= ortho * pto;
+    projection *= orthoA * orthoB * pto;
 
     return projection;
 }

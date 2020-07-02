@@ -58,12 +58,12 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
     // Then return it.
 
     float fovY = eye_fov / 180.0f * M_PI;
-    float t = tan(fovY / 2) * abs(zNear);
+    float t = tan(fovY / 2) * -1.0f*zNear;
     float r = aspect_ratio * t;
     float l = -r;
     float b = -t;
-    float n = -zNear;
-    float f = -zFar;
+    float n = zNear;
+    float f = zFar;
 
     // build a matrix of orthographic projection
     Eigen::Matrix4f orthoA(4, 4);
@@ -74,8 +74,8 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
         0.0f, 0.0f, 0.0f, 1.0f;
     Eigen::Matrix4f orthoB(4, 4);
     orthoB <<
-        1.0f, 0.0f, 0.0f, -(r + l) / 2.0f,
-        0.0f, 1.0f, 0.0f, -(t + b) / 2.0f,
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, -(n + f) / 2.0f,
         0.0f, 0.0f, 0.0f, 1.0f;
     Eigen::Matrix4f ortho = orthoA * orthoB;
@@ -85,7 +85,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
     pto <<
         n, 0.0f, 0.0f, 0.0f,
         0.0f, n, 0.0f, 0.0f,
-        0.0f, 0.0f, n + f, -(n * f),
+        0.0f, 0.0f, n + f, -n * f,
         0.0f, 0.0f, 1.0f, 0.0f;
 
     // compute the projection matrix
@@ -125,7 +125,13 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     if (payload.texture)
     {
         // TODO: Get the texture value at the texture coordinates of the current fragment
-        return_color = payload.texture->getColor(payload.tex_coords.x(), payload.tex_coords.y());
+        float u = payload.tex_coords.x();
+        float v = payload.tex_coords.y();
+        if (u < 0.0f) u = 0.0f;
+        if (u > 1.0f) u = 1.0f;
+        if (v < 0.0f) v = 0.0f;
+        if (v > 1.0f) v = 1.0f;
+        return_color = payload.texture->getColor(u, v);
     }
     Eigen::Vector3f texture_color;
     texture_color << return_color.x(), return_color.y(), return_color.z();
