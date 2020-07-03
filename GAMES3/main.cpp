@@ -241,8 +241,6 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     return result_color * 255.f;
 }
 
-
-
 Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payload)
 {
 
@@ -276,6 +274,23 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
     // Position p = p + kn * n * h(u,v)
     // Normal n = normalize(TBN * ln)
 
+    Eigen::Vector3f n = normal;
+    float x = normal.x(), y = normal.y(), z = normal.z();
+    Eigen::Vector3f t{ x * y / sqrt(x * x + z * z), sqrt(x * x + z * z), z * y / sqrt(x * x + z * z) };
+    Eigen::Vector3f b = n.cross(t);
+    Matrix3f TBN;
+    TBN << t, b, n;
+
+    float u = payload.tex_coords[0];
+    float v = payload.tex_coords[1];
+    float w = payload.texture->width;
+    float h = payload.texture->height;
+
+    float dU = kh * kn * (payload.texture->getColor(u + 1.0f / w, v).norm() - payload.texture->getColor(u, v).norm());
+    float dV = kh * kn * (payload.texture->getColor(u, v + 1.0f / h).norm() -payload.texture->getColor(u, v).norm());
+    Eigen::Vector3f ln{ -dU, -dV, 1.0f };
+    point = point + kn * n * payload.texture->getColor(u, v).norm();
+    n = (TBN * ln).normalized();
 
     Eigen::Vector3f result_color = { 0, 0, 0 };
 
@@ -312,7 +327,6 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
     return result_color * 255.f;
 }
 
-
 Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
 {
 
@@ -346,6 +360,35 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
     // Vector ln = (-dU, -dV, 1)
     // Normal n = normalize(TBN * ln)
 
+    // copied from function *texture_fragment_shader*
+    Eigen::Vector3f return_color = { 0, 0, 0 };
+
+    // map to local coord. system
+    Eigen::Vector3f n = normal;
+    Eigen::Vector3f t;
+    t << n.x() * n.y() / std::sqrt(n.x() * n.x() + n.z() * n.z()),
+        std::sqrt(n.x() * n.x() + n.z() * n.z()),
+        n.z()* n.y() / std::sqrt(n.x() * n.x() + n.z() * n.z());
+    Eigen::Vector3f b = n.cross(t);
+    /* 
+    t、b、n分别是切线、副切线和法线，这个可能是老师上课说的局部坐标系吧
+    （t、b、n分别是局部坐标系的三个轴，有些资料里把这个坐标系空间称为“切线空间”），
+    是为了把用微分求出来的法线从局部坐标系转换到模型空间（因为是用的局部的du和dv
+    在局部坐标系下求得的新的法线，所以刚求出来的法线也就是框架里的ln是在局部坐标系的）
+    */
+    Eigen::Matrix3f TBN;
+    TBN << t, b, n;
+
+    float u = payload.tex_coords[0];
+    float v = payload.tex_coords[1];
+    float w = payload.texture->width;
+    float h = payload.texture->height;
+
+    float dU = kh * kn * (payload.texture->getColor(u + 1.0f / w, v).norm() - payload.texture->getColor(u, v).norm());
+    float dV = kh * kn * (payload.texture->getColor(u, v + 1.0f / h).norm() - payload.texture->getColor(u, v).norm());
+    Eigen::Vector3f ln = { -dU, -dV, 1.0f };
+    // pertubated norm vector
+    normal = (TBN * ln).normalized();
 
     Eigen::Vector3f result_color = { 0, 0, 0 };
     result_color = normal;
@@ -386,10 +429,10 @@ int main(int argc, const char** argv)
     auto texture_path = "hmap.jpg";
     r.set_texture(Texture(obj_path + texture_path));
 
-    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = texture_fragment_shader;
-    texture_path = "spot_texture.png";
-    r.set_texture(Texture(obj_path + texture_path));
-
+    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = displacement_fragment_shader;
+    //texture_path = "spot_texture.png";
+    //r.set_texture(Texture(obj_path + texture_path));
+    
     if (argc >= 2)
     {
         command_line = true;

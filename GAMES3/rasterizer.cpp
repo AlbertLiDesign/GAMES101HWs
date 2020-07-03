@@ -286,7 +286,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
                 // barycentric coordinates
                 // depth interpolation
                 float alpha, beta, gamma;
-                std::tie(alpha, beta, gamma) = computeBarycentric2D(x, y, t.v);
+                std::tie(alpha, beta, gamma) = computeBarycentric2D(x+0.5f, y+0.5f, t.v);
 
                 //    * v[i].w() is the vertex view space depth value z.
                 //    * Z is interpolated view space depth for the current pixel
@@ -294,7 +294,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
                 float Z = 1.0f / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                 float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                 zp *= Z;
-                zp = -std::min(minDepth, zp);
+                zp = std::min(minDepth, zp);
 
                 if (zp < depth_buf[get_index(x, y)])
                 {
