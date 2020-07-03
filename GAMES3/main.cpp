@@ -283,14 +283,20 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
 
     float u = payload.tex_coords[0];
     float v = payload.tex_coords[1];
+
+    if (u < 0.0f) { u = 0.0f; }
+    if (v < 0.0f) { v = 0.0f; }
+    if (u > 1.0f) { u = 1.0f; }
+    if (v > 1.0f) { v = 1.0f; }
+
     float w = payload.texture->width;
     float h = payload.texture->height;
 
     float dU = kh * kn * (payload.texture->getColor(u + 1.0f / w, v).norm() - payload.texture->getColor(u, v).norm());
-    float dV = kh * kn * (payload.texture->getColor(u, v + 1.0f / h).norm() -payload.texture->getColor(u, v).norm());
+    float dV = kh * kn * (payload.texture->getColor(u, v + 1.0f / h).norm() - payload.texture->getColor(u, v).norm());
     Eigen::Vector3f ln{ -dU, -dV, 1.0f };
-    point = point + kn * n * payload.texture->getColor(u, v).norm();
-    n = (TBN * ln).normalized();
+    point += kn * n * payload.texture->getColor(u, v).norm();
+    normal = (TBN * ln).normalized();
 
     Eigen::Vector3f result_color = { 0, 0, 0 };
 
@@ -381,6 +387,12 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
 
     float u = payload.tex_coords[0];
     float v = payload.tex_coords[1];
+
+    if (u < 0.0f) { u = 0.0f; }
+    if (v < 0.0f) { v = 0.0f; }
+    if (u > 1.0f) { u = 1.0f; }
+    if (v > 1.0f) { v = 1.0f; }
+
     float w = payload.texture->width;
     float h = payload.texture->height;
 
